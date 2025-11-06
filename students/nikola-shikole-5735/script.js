@@ -62,6 +62,42 @@ function setupEventListeners() {
     // TODO: Add sort listeners to table headers
 }
 
+function formatAward(award) {
+  if (!award || !award.year) return "—";
+  const year = award.year ?? "Unknown Year";
+  const status = award.is_winner ? "Winner" : "Nominee";
+  return `${year} ${status}`;
+}
+
+/**
+ * Format series in all its possible forms
+ */
+function formatSeries(series) {
+  // Handle false explicitly first
+  if (series === false) return "None";
+
+  if (typeof series === "string") return series;
+
+  if (typeof series === "object" && series !== null) {
+    return series.order
+      ? `${series.name} (#${series.order})`
+      : series.name || "—";
+  }
+
+  // Catch null, undefined, or anything else weird
+  if (!series) return "—";
+
+  return "—";
+}
+
+/**
+ * Format genres nicely
+ */
+function formatGenres(genres) {
+  if (!Array.isArray(genres) || genres.length === 0) return "None";
+  return genres.join(", ");
+}
+
 /**
  * Load book data from JSON file
  */
@@ -118,61 +154,52 @@ async function loadData() {
  * Display books in the table
  */
 function displayBooks() {
-    // TODO: Render the filtered and sorted books in the table
-    // TODO: Update results count
-    // TODO: Show/hide no results message
-    
-    // Clear existing table content
-    tableBody.innerHTML = '';
-    
-    // DONE: Update results count
+  tableBody.innerHTML = "";
+
   resultsCount.textContent = `Showing ${filteredBooks.length} of ${books.length} books`;
 
-    // Show/hide no results message
-    if (filteredBooks.length === 0) {
-        noResults.classList.remove('hidden');
-        return;
-    } else {
-        noResults.classList.add('hidden');
-    }
-    
-    // TODO: Create table rows for each book
-    // For each book in filteredBooks:
-    // - Create a table row
-    // - Add cells for each column (title, author, type, award, publisher, series, genres)
-    // - Handle edge cases (series: false/string/object, empty genres, special characters)
-    // - Append row to tableBody
+  if (filteredBooks.length === 0) {
+    noResults.classList.remove("hidden");
+    return;
+  } else {
+    noResults.classList.add("hidden");
+  }
 
-    filteredBooks.forEach((book) => {
+  filteredBooks.forEach((book) => {
     const tr = document.createElement("tr");
 
-    const awardText = book.award
-      ? `${book.award.year} ${book.award.is_winner ? "Winner" : "Nominee"}`
-      : "—";
+    // Define each column cell
+    const tdTitle = document.createElement("td");
+    tdTitle.textContent = book.title || "—";
 
-    const seriesText =
-      book.series === false
-        ? "None"
-        : typeof book.series === "string"
-        ? book.series
-        : book.series && typeof book.series === "object"
-        ? `${book.series.name} (#${book.series.order})`
-        : "—";
+    const tdAuthor = document.createElement("td");
+    tdAuthor.textContent = book.author || "—";
 
-    const genresText =
-      Array.isArray(book.genres) && book.genres.length > 0
-        ? book.genres.join(", ")
-        : "None";
+    const tdType = document.createElement("td");
+    tdType.textContent = book.award?.category || "—";
 
-    tr.innerHTML = `
-      <td>${book.title}</td>
-      <td>${book.author}</td>
-      <td>${book.award?.category || "—"}</td>
-      <td>${awardText}</td>
-      <td>${book.publisher || "—"}</td>
-      <td>${seriesText}</td>
-      <td>${genresText}</td>
-    `;
+    const tdAward = document.createElement("td");
+    tdAward.textContent = formatAward(book.award);
+
+    const tdPublisher = document.createElement("td");
+    tdPublisher.textContent = book.publisher || "—";
+
+    const tdSeries = document.createElement("td");
+    tdSeries.textContent = formatSeries(book.series);
+
+    const tdGenres = document.createElement("td");
+    tdGenres.textContent = formatGenres(book.genres);
+
+    // Append cells safely
+    tr.append(
+      tdTitle,
+      tdAuthor,
+      tdType,
+      tdAward,
+      tdPublisher,
+      tdSeries,
+      tdGenres
+    );
 
     tableBody.appendChild(tr);
   });
