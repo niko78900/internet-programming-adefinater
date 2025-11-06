@@ -398,20 +398,18 @@ function updateSortIndicators() {
  * Handle filter changes
  */
 function handleFilterChange() {
-    // TODO: Implement filtering logic
-    // - Get current filter values
-    // - Filter books array based on criteria
-    // - Update filteredBooks array
-    // - Re-display books
-  const searchTerm = nameFilter.value.toLowerCase();
+  const searchTerm = nameFilter.value.toLowerCase().trim();
   const winnerStatus = winnerFilter.value;
 
+  // Filter books first
   filteredBooks = books.filter((book) => {
     const title = book.title ? book.title.toLowerCase() : "";
     const author = book.author ? book.author.toLowerCase() : "";
 
     const matchesSearch =
-      title.includes(searchTerm) || author.includes(searchTerm);
+      searchTerm === "" ||
+      title.includes(searchTerm) ||
+      author.includes(searchTerm);
 
     let matchesWinner = true;
     if (winnerStatus === "winners") matchesWinner = book.award?.is_winner;
@@ -421,8 +419,29 @@ function handleFilterChange() {
     return matchesSearch && matchesWinner;
   });
 
+  // Smart relevance sort only if search term entered
+  if (searchTerm !== "") {
+    filteredBooks.sort((a, b) => {
+      const score = (book) => {
+        const title = book.title?.toLowerCase() || "";
+        const author = book.author?.toLowerCase() || "";
+
+        if (title === searchTerm) return 4;          // exact title match
+        if (title.includes(searchTerm)) return 3;    // partial title match
+        if (author.includes(searchTerm)) return 2;   // author match
+        return 1;                                    // default fallback
+      };
+
+      const scoreA = score(a);
+      const scoreB = score(b);
+
+      // Higher score first; tie-breaker = award year (descending)
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return (b.award?.year || 0) - (a.award?.year || 0);
+    });
+  }
+
   displayBooks();
-    
     console.log('Filters changed');
 }
 
